@@ -60,10 +60,6 @@ let
     license = licenses.asl20;
     maintainers = with maintainers; [ ndl ];
     platforms = platforms.unix;
-    # aarch64-darwin is broken because of https://github.com/bazelbuild/rules_cc/pull/136
-    # however even with that fix applied, it doesn't work for everyone:
-    # https://github.com/NixOS/nixpkgs/pull/184395#issuecomment-1207287129
-    broken = stdenv.isAarch64;
   };
 
   cudatoolkit_joined = symlinkJoin {
@@ -232,14 +228,18 @@ let
       "--cxxopt=-x" "--cxxopt=c++" "--host_cxxopt=-x" "--host_cxxopt=c++"
     ];
 
+    # We intentionally overfetch so we can share the fetch derivation across all the different configurations
     fetchAttrs = {
-      sha256 =
-        if cudaSupport then
-          "sha256-KN1akhisazX6bSAmCgPmw926c8lv232fMtgiouuwLb4="
-        else {
-          x86_64-linux = "sha256-3dYXATzG6gptSFpiPRa25668KRHYf5Z7SO5YTKsTUOI=";
-          aarch64-darwin = "sha256-QVAvjFe49wz6Jp43N8gWoo1PzQYTRSiFJ4R4CuEvyFw=";
-        }.${stdenv.system} or (throw "unsupported system ${stdenv.system}");
+      bazelFlags = [
+        "--config=avx_posix"
+        "--config=cuda"
+        "--config=mkl_open_source_only"
+      ];
+
+      preBuild = ''
+        export TF_SYSTEM_LIBS=""
+      '';
+      sha256 = "sha256-kxvk28S4u13ZcUcvkNqRVuk6p0YZhQv2wsDCrbV9h7E=";
     };
 
     buildAttrs = {
