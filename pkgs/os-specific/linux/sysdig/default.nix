@@ -1,13 +1,13 @@
 { lib, stdenv, fetchFromGitHub, fetchpatch, cmake, kernel, installShellFiles, pkg-config
 , luajit, ncurses, perl, jsoncpp, libb64, openssl, curl, jq, gcc, elfutils, tbb, protobuf, grpc
-, libyamlcpp, nlohmann_json
+, yaml-cpp, nlohmann_json, re2, zstd
 }:
 
 with lib;
 let
   # Compare with https://github.com/draios/sysdig/blob/dev/cmake/modules/falcosecurity-libs.cmake
-  libsRev = "e5c53d648f3c4694385bbe488e7d47eaa36c229a";
-  libsSha256 = "sha256-pG10y5PpDqaF/cq8oAvax5B/ls2UTRQd7tCfBjWVf0U=";
+  libsRev = "0.10.5";
+  libsSha256 = "sha256-5a5ePcMHAlniJ8sU/5kKdRp5YkJ6tcr4h5Ru4Oc2kQY=";
 
   # Compare with https://github.com/falcosecurity/libs/blob/master/cmake/modules/valijson.cmake#L17
   valijson = fetchFromGitHub {
@@ -20,13 +20,13 @@ let
 in
 stdenv.mkDerivation rec {
   pname = "sysdig";
-  version = "0.29.3";
+  version = "0.31.3";
 
   src = fetchFromGitHub {
     owner = "draios";
     repo = "sysdig";
     rev = version;
-    sha256 = "sha256-dMLeroOd9CgvmgQdPfX8oBxQSyksZi/hP4vO03JhlF0=";
+    sha256 = "sha256-TMh2gw/vw6DbhKGwbqU2+c0DTpRaMZqUM83KE18NDmI=";
   };
 
   nativeBuildInputs = [ cmake perl installShellFiles pkg-config ];
@@ -45,7 +45,8 @@ stdenv.mkDerivation rec {
     libyamlcpp
     jsoncpp
     nlohmann_json
-  ] ++ optionals (kernel != null) kernel.moduleBuildDependencies;
+    zstd
+  ] ++ lib.optionals (kernel != null) kernel.moduleBuildDependencies;
 
   hardeningDisable = [ "pic" ];
 
@@ -74,8 +75,8 @@ stdenv.mkDerivation rec {
       echo "falcosecurity-libs checksum needs to be updated!"
       exit 1
     fi
-    cmakeFlagsArray+=(-DCMAKE_EXE_LINKER_FLAGS="-ltbb -lcurl -labsl_synchronization")
-  '' + optionalString (kernel != null) ''
+    cmakeFlagsArray+=(-DCMAKE_EXE_LINKER_FLAGS="-ltbb -lcurl -lzstd -labsl_synchronization")
+  '' + lib.optionalString (kernel != null) ''
     export INSTALL_MOD_PATH="$out"
     export KERNELDIR="${kernel.dev}/lib/modules/${kernel.modDirVersion}/build"
   '';
