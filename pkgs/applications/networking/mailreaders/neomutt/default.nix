@@ -1,18 +1,18 @@
 { lib, stdenv, fetchFromGitHub, gettext, makeWrapper, tcl, which
 , ncurses, perl , cyrus_sasl, gss, gpgme, libkrb5, libidn, libxml2, notmuch, openssl
-, lmdb, libxslt, docbook_xsl, docbook_xml_dtd_42, w3m, mailcap, sqlite, zlib
-, zstd, enableZstd ? true, enableMixmaster ? false
+, lua, lmdb, libxslt, docbook_xsl, docbook_xml_dtd_42, w3m, mailcap, sqlite, zlib
+, pkg-config, zstd, enableZstd ? true, enableMixmaster ? false, enableLua ? false
 }:
 
 stdenv.mkDerivation rec {
-  version = "20220429";
+  version = "20230322";
   pname = "neomutt";
 
   src = fetchFromGitHub {
     owner  = "neomutt";
     repo   = "neomutt";
     rev    = version;
-    sha256 = "sha256-LBY7WtmEMg/PcMS/Tc5XEYunIWjoI4IQfUJURKgy1YA=";
+    sha256 = "sha256-dVNnxfclrwKVVNlblFGb6HysBlMSQc2k8NSlrcn3oug=";
   };
 
   buildInputs = [
@@ -20,10 +20,12 @@ stdenv.mkDerivation rec {
     notmuch openssl perl lmdb
     mailcap sqlite
   ]
-  ++ lib.optional enableZstd zstd;
+  ++ lib.optional enableZstd zstd
+  ++ lib.optional enableLua lua;
 
   nativeBuildInputs = [
     docbook_xsl docbook_xml_dtd_42 gettext libxml2 libxslt.bin makeWrapper tcl which zlib w3m
+    pkg-config
   ];
 
   enableParallelBuilding = true;
@@ -46,10 +48,6 @@ stdenv.mkDerivation rec {
       --replace /etc/mime.types ${mailcap}/etc/mime.types
   '';
 
-  preBuild = ''
-    export HOME=$(mktemp -d)
-  '';
-
   configureFlags = [
     "--enable-autocrypt"
     "--gpgme"
@@ -66,12 +64,8 @@ stdenv.mkDerivation rec {
     "--zlib"
   ]
   ++ lib.optional enableZstd "--zstd"
+  ++ lib.optional enableLua "--lua"
   ++ lib.optional enableMixmaster "--mixmaster";
-
-  # Fix missing libidn in mutt;
-  # this fix is ugly since it links all binaries in mutt against libidn
-  # like pgpring, pgpewrap, ...
-  NIX_LDFLAGS = "-lidn";
 
   postInstall = ''
     wrapProgram "$out/bin/neomutt" --prefix PATH : "$out/libexec/neomutt"
@@ -83,8 +77,8 @@ stdenv.mkDerivation rec {
     cp -r ${fetchFromGitHub {
       owner = "neomutt";
       repo = "neomutt-test-files";
-      rev = "8629adab700a75c54e8e28bf05ad092503a98f75";
-      sha256 = "1ci04nqkab9mh60zzm66sd6mhsr6lya8wp92njpbvafc86vvwdlr";
+      rev = "1569b826a56c39fd09f7c6dd5fc1163ff5a356a2";
+      sha256 = "sha256-MaH2zEH1Wq3C0lFxpEJ+b/A+k2aKY/sr1EtSPAuRPp8=";
     }} $(pwd)/test-files
     chmod -R +w test-files
     (cd test-files && ./setup.sh)
