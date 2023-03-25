@@ -21,7 +21,7 @@ import ./make-test-python.nix ({ lib, pkgs, ... }: {
           cryptroot.device = "/dev/vdb";
           cryptroot2.device = "/dev/vdc";
         };
-        virtualisation.bootDevice = "/dev/mapper/cryptroot";
+        virtualisation.rootDevice = "/dev/mapper/cryptroot";
       };
       boot-luks-custom-keymap.configuration = lib.mkMerge [
         boot-luks.configuration
