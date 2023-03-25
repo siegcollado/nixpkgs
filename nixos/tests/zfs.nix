@@ -172,9 +172,10 @@ in {
 
   stable = makeZfsTest "stable" { };
 
-  unstable = makeZfsTest "unstable" {
-    enableUnstable = true;
-  };
+# TODO: broken because of zfsUnstable.latestCompatibleLinuxPackage evaluate to null.
+#  unstable = makeZfsTest "unstable" {
+#    enableUnstable = true;
+#  };
 
   installer = (import ./installer.nix { }).zfsroot;
 
@@ -187,7 +188,6 @@ in {
         networking.hostId = "00000000";
 
         virtualisation = {
-          # We don't care about our disk.
           diskImage = null;
           emptyDiskImages = [ 20480 20480 20480 20480 20480 20480 ];
         };
@@ -204,13 +204,13 @@ in {
         machine.wait_for_unit("default.target")
         print(machine.succeed('mount'))
 
+        print(machine.succeed('parted --script /dev/vda -- mklabel gpt'))
+        print(machine.succeed('parted --script /dev/vda -- mkpart primary 1M 70M'))
+
         print(machine.succeed('parted --script /dev/vdb -- mklabel gpt'))
         print(machine.succeed('parted --script /dev/vdb -- mkpart primary 1M 70M'))
 
-        print(machine.succeed('parted --script /dev/vdc -- mklabel gpt'))
-        print(machine.succeed('parted --script /dev/vdc -- mkpart primary 1M 70M'))
-
-        print(machine.succeed('zpool create tank mirror /dev/vdb1 /dev/vdc1 mirror /dev/vdd /dev/vde mirror /dev/vdf /dev/vdg'))
+        print(machine.succeed('zpool create tank mirror /dev/vda1 /dev/vdb1 mirror /dev/vdc /dev/vdd mirror /dev/vde /dev/vdf'))
         print(machine.succeed('zpool list -v'))
         print(machine.succeed('mount'))
         start_size = int(machine.succeed('df -k --output=size /tank | tail -n1').strip())
