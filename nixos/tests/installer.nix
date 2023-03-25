@@ -318,6 +318,7 @@ let
           virtualisation.emptyDiskImages = [ 512 ];
           virtualisation.bootDevice =
             if grubVersion == 1 then "/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive2" else "/dev/vdb";
+          virtualisation.rootDevice = "/dev/vda";
           virtualisation.qemu.diskInterface =
             if grubVersion == 1 then "scsi" else "virtio";
 
