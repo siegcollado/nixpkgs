@@ -195,8 +195,7 @@ stdenv.mkDerivation rec {
     rm -f man/gnome-shell.1
     rm data/theme/gnome-shell.css
 
-    # Build fails with -Dgtk_doc=true
-    # https://gitlab.gnome.org/GNOME/gnome-shell/-/issues/6486
+    # FIXME: Probably an upstream issue, report this to upstream.
     # element include: XInclude error : could not load xxx, and no fallback was found
     substituteInPlace docs/reference/shell/shell-docs.sgml \
       --replace '<xi:include href="xml/shell-embedded-window.xml"/>' ' ' \
